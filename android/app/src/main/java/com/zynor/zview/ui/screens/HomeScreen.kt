@@ -46,16 +46,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.zynor.zview.data.local.DocumentEntity
-import com.zynor.zview.ui.theme.CeruleanBlue
-import com.zynor.zview.ui.theme.DarkSurface
-import com.zynor.zview.ui.theme.DividerColor
-import com.zynor.zview.ui.theme.ElevatedSurface
-import com.zynor.zview.ui.theme.JetBlack
-import com.zynor.zview.ui.theme.NeonRose
-import com.zynor.zview.ui.theme.PureWhite
-import com.zynor.zview.ui.theme.SecondaryText
 import com.zynor.zview.ui.viewmodel.ZViewViewModel
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -70,6 +64,7 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val recentDocs by viewModel.recentDocuments.collectAsState()
+    val colors = MaterialTheme.colorScheme
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia(10)
@@ -90,7 +85,7 @@ fun HomeScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(JetBlack)
+            .background(colors.background)
             .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
@@ -104,27 +99,27 @@ fun HomeScreen(
                     Box(
                         modifier = Modifier
                             .size(44.dp)
-                            .background(DarkSurface, RoundedCornerShape(12.dp)),
+                            .background(colors.surface, RoundedCornerShape(12.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "Z",
                             style = MaterialTheme.typography.headlineMedium,
-                            color = CeruleanBlue,
+                            color = colors.primary,
                             fontWeight = FontWeight.Bold
                         )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
-                            text = "ZView",
+                            text = "Z Scan: PDF Maker",
                             style = MaterialTheme.typography.headlineMedium,
-                            color = PureWhite
+                            color = colors.onBackground
                         )
                         Text(
                             text = "Offline Document Scanner & PDF Studio",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = SecondaryText
+                            color = colors.onSurfaceVariant
                         )
                     }
                 }
@@ -135,7 +130,7 @@ fun HomeScreen(
                     Icon(
                         imageVector = Icons.Default.Settings,
                         contentDescription = "Settings",
-                        tint = SecondaryText
+                        tint = colors.onSurfaceVariant
                     )
                 }
             }
@@ -143,8 +138,8 @@ fun HomeScreen(
 
         item {
             Card(
-                colors = CardDefaults.cardColors(containerColor = DarkSurface),
-                border = BorderStroke(1.dp, DividerColor),
+                colors = CardDefaults.cardColors(containerColor = colors.surface),
+                border = BorderStroke(1.dp, colors.outline),
                 shape = RoundedCornerShape(20.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -152,20 +147,20 @@ fun HomeScreen(
                     Text(
                         text = "Capture or Import Pages",
                         style = MaterialTheme.typography.titleLarge,
-                        color = PureWhite
+                        color = colors.onSurface
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = "Edge detection, perspective correction, and instant multi-page PDF creation — 100% on-device.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = SecondaryText
+                        color = colors.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(18.dp))
                     Button(
                         onClick = onStartScan,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = CeruleanBlue,
-                            contentColor = PureWhite
+                            containerColor = colors.primary,
+                            contentColor = colors.onPrimary
                         ),
                         shape = RoundedCornerShape(14.dp),
                         modifier = Modifier
@@ -183,7 +178,7 @@ fun HomeScreen(
                                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                             )
                         },
-                        border = BorderStroke(1.dp, CeruleanBlue),
+                        border = BorderStroke(1.dp, colors.primary),
                         shape = RoundedCornerShape(14.dp),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -192,10 +187,10 @@ fun HomeScreen(
                         Icon(
                             imageVector = Icons.Default.PhotoLibrary,
                             contentDescription = null,
-                            tint = PureWhite
+                            tint = colors.primary
                         )
                         Spacer(modifier = Modifier.width(10.dp))
-                        Text(text = "Import Images", color = PureWhite)
+                        Text(text = "Import Images", color = colors.onSurface)
                     }
                 }
             }
@@ -210,10 +205,10 @@ fun HomeScreen(
                 Text(
                     text = "Recent Documents",
                     style = MaterialTheme.typography.titleLarge,
-                    color = PureWhite
+                    color = colors.onBackground
                 )
                 TextButton(onClick = onOpenDocuments) {
-                    Text(text = "View All Documents", color = CeruleanBlue)
+                    Text(text = "View All Documents", color = colors.primary)
                 }
             }
         }
@@ -221,8 +216,8 @@ fun HomeScreen(
         if (recentDocs.isEmpty()) {
             item {
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = DarkSurface),
-                    border = BorderStroke(1.dp, DividerColor),
+                    colors = CardDefaults.cardColors(containerColor = colors.surface),
+                    border = BorderStroke(1.dp, colors.outline),
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -235,20 +230,20 @@ fun HomeScreen(
                         Icon(
                             imageVector = Icons.Default.Description,
                             contentDescription = null,
-                            tint = CeruleanBlue,
+                            tint = colors.primary,
                             modifier = Modifier.size(40.dp)
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = "No Scanned Documents Yet",
                             style = MaterialTheme.typography.titleMedium,
-                            color = PureWhite
+                            color = colors.onSurface
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = "Tap Scan Document or Import Images above to create your first offline PDF.",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = SecondaryText
+                            color = colors.onSurfaceVariant
                         )
                     }
                 }
@@ -266,12 +261,13 @@ private fun RecentDocumentRow(
     document: DocumentEntity,
     onClick: () -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
     val dateFormatted = SimpleDateFormat("MMM d, yyyy · HH:mm", Locale.US)
         .format(Date(document.updatedAt))
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = ElevatedSurface),
-        border = BorderStroke(1.dp, DividerColor),
+        colors = CardDefaults.cardColors(containerColor = colors.surfaceVariant),
+        border = BorderStroke(1.dp, colors.outline),
         shape = RoundedCornerShape(14.dp),
         modifier = Modifier
             .fillMaxWidth()
@@ -288,26 +284,35 @@ private fun RecentDocumentRow(
                 Box(
                     modifier = Modifier
                         .size(48.dp)
-                        .background(DarkSurface, RoundedCornerShape(10.dp)),
+                        .background(colors.surface, RoundedCornerShape(10.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Description,
-                        contentDescription = null,
-                        tint = NeonRose
-                    )
+                    val thumbFile = document.thumbnailPath?.let { File(it) }
+                    if (thumbFile != null && thumbFile.exists()) {
+                        AsyncImage(
+                            model = thumbFile,
+                            contentDescription = "${document.name} thumbnail",
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Description,
+                            contentDescription = null,
+                            tint = colors.secondary
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.width(14.dp))
                 Column {
                     Text(
                         text = document.name,
                         style = MaterialTheme.typography.titleMedium,
-                        color = PureWhite
+                        color = colors.onSurface
                     )
                     Text(
                         text = "${document.pageCount} pages · $dateFormatted",
                         style = MaterialTheme.typography.labelMedium,
-                        color = SecondaryText
+                        color = colors.onSurfaceVariant
                     )
                 }
             }

@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ZView"
+rootProject.name = "ZScan"
 include(":app")

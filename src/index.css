@@ -1,24 +1,41 @@
 @import "tailwindcss";
 
 @layer base {
-  :root {
-    --zview-jet-black: #0A0A0A;
-    --zview-cerulean: #007BA7;
-    --zview-neon-rose: #FF2D95;
-    --zview-white: #FFFFFF;
-    --zview-text-secondary: #B8B8C2;
-    --zview-surface-dark: #17171C;
-    --zview-surface-elevated: #22222A;
-    --zview-divider: #34343D;
-    --zview-error: #FF5252;
-    --zview-success: #4CAF50;
+  :root,
+  html.dark {
+    --z-bg: #0A0A0A;
+    --z-surface: #17171C;
+    --z-elevated: #22222A;
+    --z-border: #34343D;
+    --z-text-primary: #FFFFFF;
+    --z-text-secondary: #B8B8C2;
+    --z-primary: #007BA7;
+    --z-accent: #FF2D95;
+    --z-error: #FF5252;
+    --z-success: #4CAF50;
+    color-scheme: dark;
+  }
+
+  html.light {
+    --z-bg: #F6F8FA;
+    --z-surface: #FFFFFF;
+    --z-elevated: #EEF2F6;
+    --z-border: #D5DAE2;
+    --z-text-primary: #0A0A0A;
+    --z-text-secondary: #4A505C;
+    --z-primary: #007BA7;
+    --z-accent: #FF2D95;
+    --z-error: #D32F2F;
+    --z-success: #2E7D32;
+    color-scheme: light;
   }
 
   body {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: #0A0A0A;
-    color: #FFFFFF;
+    background-color: var(--z-bg);
+    color: var(--z-text-primary);
     letter-spacing: 0.01em;
+    transition: background-color 150ms ease, color 150ms ease;
   }
 
   code, pre, .font-mono {
@@ -30,4 +47,3 @@
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
-

@@ -43,7 +43,7 @@ object FilenameValidator {
         if (trimmed == "." || trimmed == "..") {
             return ValidationResult(
                 isValid = false,
-                sanitizedName = "ZView_Scan",
+                sanitizedName = "ZScan_Document",
                 errorMessage = "Filename cannot be only dots."
             )
         }

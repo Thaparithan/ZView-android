@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -36,6 +37,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material3.Button
@@ -68,14 +70,6 @@ import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import com.zynor.zview.data.local.DocumentEntity
 import com.zynor.zview.data.local.EnhancementMode
-import com.zynor.zview.ui.theme.CeruleanBlue
-import com.zynor.zview.ui.theme.DarkSurface
-import com.zynor.zview.ui.theme.DividerColor
-import com.zynor.zview.ui.theme.ErrorRed
-import com.zynor.zview.ui.theme.JetBlack
-import com.zynor.zview.ui.theme.NeonRose
-import com.zynor.zview.ui.theme.PureWhite
-import com.zynor.zview.ui.theme.SecondaryText
 import com.zynor.zview.ui.viewmodel.ZViewViewModel
 import java.io.File
 
@@ -88,6 +82,7 @@ fun ScannerScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val state by viewModel.scannerState.collectAsState()
+    val colors = MaterialTheme.colorScheme
 
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -102,6 +97,18 @@ fun ScannerScreen(
     ) { granted ->
         hasCameraPermission = granted
         permissionDeniedPermanently = !granted
+    }
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickMultipleVisualMedia(10)
+    ) { uris ->
+        uris.forEach { uri ->
+            context.contentResolver.openInputStream(uri)?.use { stream ->
+                BitmapFactory.decodeStream(stream)?.let { bmp ->
+                    viewModel.addCapturedBitmap(bmp)
+                }
+            }
+        }
     }
 
     // Request camera permission ONLY when ScannerScreen is entered
@@ -132,7 +139,7 @@ fun ScannerScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(JetBlack)
+            .background(colors.background)
             .padding(16.dp)
     ) {
         Row(
@@ -144,13 +151,13 @@ fun ScannerScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = PureWhite
+                    tint = colors.onBackground
                 )
             }
             Text(
-                text = "Document Scanner (${state.pages.size} pages)",
+                text = "Z Scan: PDF Maker (${state.pages.size} pages)",
                 style = MaterialTheme.typography.titleMedium,
-                color = PureWhite
+                color = colors.onBackground
             )
             OutlinedButton(
                 onClick = {
@@ -169,20 +176,20 @@ fun ScannerScreen(
                             )
                         }
                 },
-                border = BorderStroke(1.dp, CeruleanBlue)
+                border = BorderStroke(1.dp, colors.primary)
             ) {
-                Text("Auto-Edge Scan", color = PureWhite)
+                Text("Auto-Edge Scan", color = colors.onBackground)
             }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        if (!hasCameraPermission) {
+        if (!hasCameraPermission && state.pages.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(DarkSurface, RoundedCornerShape(16.dp))
+                    .background(colors.surface, RoundedCornerShape(16.dp))
                     .padding(24.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -193,32 +200,42 @@ fun ScannerScreen(
                         else
                             "Camera Permission Required",
                         style = MaterialTheme.typography.titleLarge,
-                        color = PureWhite
+                        color = colors.onSurface
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "ZView requests camera access only while scanning physical documents. Your captures remain 100% offline on your device.",
+                        text = "Z Scan: PDF Maker requests camera access only while scanning physical documents. Your captures remain 100% offline on your device.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = SecondaryText
+                        color = colors.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    Button(
-                        onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) },
-                        colors = ButtonDefaults.buttonColors(containerColor = CeruleanBlue)
-                    ) {
-                        Text("Grant Camera Permission", color = PureWhite)
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Button(
+                            onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) },
+                            colors = ButtonDefaults.buttonColors(containerColor = colors.primary)
+                        ) {
+                            Text("Grant Camera", color = colors.onPrimary)
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                photoPickerLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            }
+                        ) {
+                            Text("Import Photos", color = colors.onSurface)
+                        }
                     }
                 }
             }
         } else {
-            // CameraX live preview or active page editor
             val selectedPage = state.pages.getOrNull(state.selectedPageIndex)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(DarkSurface, RoundedCornerShape(16.dp))
-                    .border(1.dp, NeonRose.copy(alpha = 0.7f), RoundedCornerShape(16.dp))
+                    .background(colors.surface, RoundedCornerShape(16.dp))
+                    .border(1.dp, colors.secondary.copy(alpha = 0.7f), RoundedCornerShape(16.dp))
             ) {
                 if (selectedPage != null) {
                     Image(
@@ -258,7 +275,7 @@ fun ScannerScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Capture & Page Editor Controls
+        // Capture, Import & Page Editor Controls
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -281,7 +298,7 @@ fun ScannerScreen(
                         }
                     )
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = CeruleanBlue),
+                colors = ButtonDefaults.buttonColors(containerColor = colors.primary),
                 modifier = Modifier.weight(1f)
             ) {
                 Icon(Icons.Default.CameraAlt, contentDescription = null)
@@ -289,12 +306,22 @@ fun ScannerScreen(
                 Text("Capture Page")
             }
 
+            IconButton(
+                onClick = {
+                    photoPickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                }
+            ) {
+                Icon(Icons.Default.PhotoLibrary, contentDescription = "Import from Photo Picker", tint = colors.primary)
+            }
+
             if (state.pages.isNotEmpty()) {
                 IconButton(onClick = { viewModel.updateCurrentPageEdits(rotationDelta = 90) }) {
-                    Icon(Icons.Default.RotateRight, contentDescription = "Rotate 90 degrees", tint = PureWhite)
+                    Icon(Icons.Default.RotateRight, contentDescription = "Rotate 90 degrees", tint = colors.onBackground)
                 }
                 IconButton(onClick = { viewModel.removePage(state.selectedPageIndex) }) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete Page", tint = ErrorRed)
+                    Icon(Icons.Default.Delete, contentDescription = "Delete Page", tint = colors.error)
                 }
             }
         }
@@ -315,7 +342,7 @@ fun ScannerScreen(
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Contrast", color = SecondaryText, modifier = Modifier.width(72.dp))
+                    Text("Contrast", color = colors.onSurfaceVariant, modifier = Modifier.width(72.dp))
                     Slider(
                         value = currentPage.contrast,
                         onValueChange = { viewModel.updateCurrentPageEdits(contrast = it) },
@@ -333,7 +360,7 @@ fun ScannerScreen(
                             .size(64.dp)
                             .border(
                                 width = if (isSelected) 2.dp else 1.dp,
-                                color = if (isSelected) NeonRose else DividerColor,
+                                color = if (isSelected) colors.secondary else colors.outline,
                                 shape = RoundedCornerShape(8.dp)
                             )
                             .clickable { viewModel.selectPage(idx) }
@@ -358,7 +385,7 @@ fun ScannerScreen(
             )
 
             state.errorMessage?.let { err ->
-                Text(text = err, color = ErrorRed, style = MaterialTheme.typography.bodyMedium)
+                Text(text = err, color = colors.error, style = MaterialTheme.typography.bodyMedium)
             }
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -368,7 +395,7 @@ fun ScannerScreen(
                     viewModel.saveAndExportPdf(allowOverwrite = true, onSuccess = onFinishedExport)
                 },
                 enabled = !state.isExportingPdf,
-                colors = ButtonDefaults.buttonColors(containerColor = CeruleanBlue),
+                colors = ButtonDefaults.buttonColors(containerColor = colors.primary),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)

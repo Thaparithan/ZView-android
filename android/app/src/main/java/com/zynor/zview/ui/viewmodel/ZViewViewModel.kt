@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.zynor.zview.data.local.AppThemeMode
 import com.zynor.zview.data.local.DocumentEntity
 import com.zynor.zview.data.local.EnhancementMode
 import com.zynor.zview.data.local.PageEntity
@@ -16,6 +17,7 @@ import com.zynor.zview.data.repository.CloudSyncManager
 import com.zynor.zview.data.repository.DocumentRepository
 import com.zynor.zview.domain.FilenameValidator
 import com.zynor.zview.domain.ImageProcessor
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -50,7 +52,7 @@ data class DraftPage(
 
 data class ScannerSessionState(
     val sessionId: String = UUID.randomUUID().toString(),
-    val documentName: String = "ZView_${SimpleDateFormat("yyyyMMdd_HHmm", Locale.US).format(Date())}",
+    val documentName: String = "ZScan_${SimpleDateFormat("yyyyMMdd_HHmm", Locale.US).format(Date())}",
     val pages: List<DraftPage> = emptyList(),
     val selectedPageIndex: Int = 0,
     val selectedPageSize: PdfPageSize = PdfPageSize.A4,
@@ -99,6 +101,9 @@ class ZViewViewModel(
     private val _scannerState = MutableStateFlow(ScannerSessionState())
     val scannerState: StateFlow<ScannerSessionState> = _scannerState.asStateFlow()
 
+    fun observeDocumentPages(documentId: String): Flow<List<PageEntity>> =
+        documentRepository.observePages(documentId)
+
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
     }
@@ -120,6 +125,10 @@ class ZViewViewModel(
 
     fun updateDraftDocumentName(name: String) {
         _scannerState.update { it.copy(documentName = name, errorMessage = null) }
+    }
+
+    fun updateSelectedPageSize(pageSize: PdfPageSize) {
+        _scannerState.update { it.copy(selectedPageSize = pageSize) }
     }
 
     fun addCapturedBitmap(bitmap: Bitmap) {
@@ -295,12 +304,20 @@ class ZViewViewModel(
         }
     }
 
+    fun setThemeMode(mode: AppThemeMode) {
+        viewModelScope.launch { settingsRepository.setThemeMode(mode) }
+    }
+
     fun setDefaultPageSize(size: PdfPageSize) {
         viewModelScope.launch { settingsRepository.setDefaultPageSize(size) }
     }
 
     fun setDefaultEnhancement(mode: EnhancementMode) {
         viewModelScope.launch { settingsRepository.setDefaultEnhancement(mode) }
+    }
+
+    fun setHighContrastUi(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setHighContrastUi(enabled) }
     }
 
     fun bindSafCloudBackupFolder(treeUri: Uri) {

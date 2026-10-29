@@ -16,15 +16,19 @@ class ZViewInstrumentedTest {
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun homeScreenDisplaysBrandAndActions() {
-        composeTestRule.onNodeWithText("ZView").assertIsDisplayed()
+    fun homeScreenDisplaysZScanPdfMakerBrandAndActions() {
+        composeTestRule.onNodeWithText("Z Scan: PDF Maker").assertIsDisplayed()
         composeTestRule.onNodeWithText("Scan Document").assertIsDisplayed()
         composeTestRule.onNodeWithText("Import Images").assertIsDisplayed()
     }
 
     @Test
-    fun navigateToSettingsShowsPersonalReviewAndFeedbackOption() {
+    fun navigateToSettingsShowsThemeModesAndFeedbackOption() {
         composeTestRule.onNodeWithText("Settings").performClick()
+        composeTestRule.onNodeWithText("Appearance & Theme Mode").assertIsDisplayed()
+        composeTestRule.onNodeWithText("System Default").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Light Mode").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Dark Mode").assertIsDisplayed()
         composeTestRule.onNodeWithText("Personal Review & Feedback").assertIsDisplayed()
     }
 }

@@ -14,6 +14,7 @@ import {
   Crop,
 } from 'lucide-react';
 import {
+  OFFICIAL_APP_NAME,
   EnhancementMode,
   ENHANCEMENT_LABELS,
   PdfPageSize,
@@ -63,16 +64,14 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
   const [selectedSampleTemplate, setSelectedSampleTemplate] =
     useState<SampleTemplateType>('invoice');
 
-  // Pending capture state ( allows user to Retake or Accept before adding to multi-page tray )
   const [pendingRawCapture, setPendingRawCapture] = useState<string | null>(null);
   const [pendingCropBounds, setPendingCropBounds] = useState<CropBounds>(DEFAULT_CROP_BOUNDS);
 
-  // Accepted multi-page document state
   const [pages, setPages] = useState<ScannedPage[]>(initialPages);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [documentName, setDocumentName] = useState<string>(() => {
     const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    return `ZView_Scan_${stamp}`;
+    return `ZScan_Document_${stamp}`;
   });
   const [pageSize, setPageSize] = useState<PdfPageSize>(defaultPageSize);
   const [isProcessingImage, setIsProcessingImage] = useState<boolean>(false);
@@ -84,7 +83,6 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Stop camera stream on unmount
   useEffect(() => {
     return () => {
       if (streamRef.current) {
@@ -154,7 +152,6 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
         return;
       }
     }
-    // High-resolution test bed sheet capture
     const sheetDataUrl = renderSampleDocumentSheet(selectedSampleTemplate);
     setPendingRawCapture(sheetDataUrl);
     setPendingCropBounds(DEFAULT_CROP_BOUNDS);
@@ -374,7 +371,7 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
       />
 
       {/* Top Scanner Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-[#17171C] border border-[#34343D] rounded-2xl px-5 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-[var(--z-surface)] border border-[var(--z-border)] rounded-2xl px-5 py-4 shadow-sm">
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -383,15 +380,15 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
               onBack();
             }}
             aria-label="Back to Home"
-            className="min-h-[44px] min-w-[44px] rounded-xl bg-[#22222A] border border-[#34343D] text-white hover:border-[#007BA7] inline-flex items-center justify-center transition-colors cursor-pointer"
+            className="min-h-[44px] min-w-[44px] rounded-xl bg-[var(--z-elevated)] border border-[var(--z-border)] text-[var(--z-text-primary)] hover:border-[#007BA7] inline-flex items-center justify-center transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-lg font-semibold text-white">
-              Document Scanner &amp; Multi-Page Studio
+            <h1 className="text-lg font-semibold text-[var(--z-text-primary)]">
+              {OFFICIAL_APP_NAME} — Scanner &amp; Multi-Page Studio
             </h1>
-            <p className="text-xs text-[#B8B8C2] font-mono tabular-nums">
+            <p className="text-xs text-[var(--z-text-secondary)] font-mono tabular-nums">
               {pages.length} {pages.length === 1 ? 'page' : 'pages'} staged · Offline Processing
             </p>
           </div>
@@ -401,7 +398,7 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="min-h-[44px] px-3.5 py-2 rounded-xl bg-[#22222A] hover:bg-[#2b2b36] border border-[#34343D] text-white text-xs font-medium inline-flex items-center gap-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            className="min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--z-elevated)] border border-[var(--z-border)] text-[var(--z-text-primary)] text-xs font-medium inline-flex items-center gap-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
             <ImagePlus className="w-4 h-4 text-[#007BA7]" />
             <span>Add Image File</span>
@@ -412,23 +409,26 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
       {errorBanner && (
         <div
           role="alert"
-          className="bg-[#17171C] border border-[#FF5252] rounded-xl p-4 text-sm text-[#FF5252]"
+          className="bg-[var(--z-surface)] border border-[#FF5252] rounded-xl p-4 text-sm text-[#FF5252]"
         >
           {errorBanner}
         </div>
       )}
 
-      {/* Step 1: On-Demand Camera Permission Gate (never requested at app startup) */}
+      {/* Step 1: On-Demand Camera Permission Gate */}
       {permissionState === 'prompt' && (
-        <div className="bg-[#17171C] border border-[#34343D] rounded-2xl p-6 sm:p-8 max-w-2xl mx-auto space-y-5">
+        <div className="bg-[var(--z-surface)] border border-[var(--z-border)] rounded-2xl p-6 sm:p-8 max-w-2xl mx-auto space-y-5 shadow-sm">
           <div className="space-y-2">
             <div className="text-xs font-mono text-[#007BA7]">
               On-Demand Camera Permission · Local Processing Only
             </div>
-            <h2 className="text-xl font-bold text-white">Allow Camera Access to Scan Documents</h2>
-            <p className="text-sm text-[#B8B8C2] leading-relaxed">
-              ZView only requests camera access when you start scanning. Captured pages are
-              processed strictly in local device memory and are never uploaded to any remote server.
+            <h2 className="text-xl font-bold text-[var(--z-text-primary)]">
+              Allow Camera Access to Scan Documents
+            </h2>
+            <p className="text-sm text-[var(--z-text-secondary)] leading-relaxed">
+              {OFFICIAL_APP_NAME} only requests camera access when you start scanning. Captured
+              pages are processed strictly in local device memory and are never uploaded to any
+              remote server.
             </p>
           </div>
 
@@ -445,7 +445,7 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
             <button
               type="button"
               onClick={() => void requestCameraAccess(true)}
-              className="min-h-[48px] px-4 py-2.5 rounded-xl bg-[#22222A] hover:bg-[#2c2c38] border border-[#34343D] text-white text-xs font-medium inline-flex items-center gap-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className="min-h-[48px] px-4 py-2.5 rounded-xl bg-[var(--z-elevated)] border border-[var(--z-border)] text-[var(--z-text-primary)] text-xs font-medium inline-flex items-center gap-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
               <span>Use Physical Webcam (getUserMedia)</span>
             </button>
@@ -453,7 +453,7 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
             <button
               type="button"
               onClick={() => setPermissionState('denied')}
-              className="min-h-[48px] px-4 py-2.5 rounded-xl bg-transparent hover:bg-[#22222A] border border-[#34343D] text-[#B8B8C2] hover:text-white text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className="min-h-[48px] px-4 py-2.5 rounded-xl bg-transparent hover:bg-[var(--z-elevated)] border border-[var(--z-border)] text-[var(--z-text-secondary)] hover:text-[var(--z-text-primary)] text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
               <span>Deny Permission</span>
             </button>
@@ -466,13 +466,15 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
         <div
           role="region"
           aria-label="Camera Permission Denied Recovery"
-          className="bg-[#17171C] border border-[#FF5252] rounded-2xl p-6 sm:p-8 max-w-2xl mx-auto space-y-5"
+          className="bg-[var(--z-surface)] border border-[#FF5252] rounded-2xl p-6 sm:p-8 max-w-2xl mx-auto space-y-5"
         >
           <div className="flex items-start gap-3.5">
             <ShieldAlert className="w-6 h-6 text-[#FF5252] shrink-0 mt-0.5" />
             <div className="space-y-2">
-              <h2 className="text-lg font-bold text-white">Camera Permission Denied</h2>
-              <p className="text-sm text-[#B8B8C2] leading-relaxed">
+              <h2 className="text-lg font-bold text-[var(--z-text-primary)]">
+                Camera Permission Denied
+              </h2>
+              <p className="text-sm text-[var(--z-text-secondary)] leading-relaxed">
                 Live camera scanning cannot proceed without camera access. You can grant camera
                 permission below, or continue offline by importing existing document photos via the
                 Android Photo Picker.
@@ -490,7 +492,7 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="min-h-[44px] px-4 py-2 rounded-xl bg-[#22222A] border border-[#34343D] text-white text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--z-elevated)] border border-[var(--z-border)] text-[var(--z-text-primary)] text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
               Import Existing Images Instead
             </button>
@@ -501,16 +503,16 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
       {/* Main Scanner & Multi-Page Editor Workspace */}
       {permissionState === 'granted' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column: Live Camera Viewfinder / Pending Capture Retake-Accept / Active Page Canvas */}
-          <div className="lg:col-span-7 bg-[#17171C] border border-[#34343D] rounded-2xl p-5 space-y-4">
+          {/* Left Column: Live Camera Viewfinder / Pending Capture Retake-Accept */}
+          <div className="lg:col-span-7 bg-[var(--z-surface)] border border-[var(--z-border)] rounded-2xl p-5 space-y-4 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="text-sm font-semibold text-white">
+              <div className="text-sm font-semibold text-[var(--z-text-primary)]">
                 {pendingRawCapture
                   ? 'Review Capture & Adjust Document Corners'
                   : 'Optical Scanner Viewfinder'}
               </div>
               {!pendingRawCapture && (
-                <div className="flex items-center gap-1.5 bg-[#0A0A0A] p-1 rounded-xl border border-[#34343D]">
+                <div className="flex items-center gap-1.5 bg-[var(--z-bg)] p-1 rounded-xl border border-[var(--z-border)]">
                   {(['invoice', 'contract', 'notes'] as SampleTemplateType[]).map((tpl) => (
                     <button
                       key={tpl}
@@ -522,7 +524,7 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
                       className={`px-2.5 py-1 rounded-lg text-xs font-medium capitalize transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                         selectedSampleTemplate === tpl && !useHardwareWebcam
                           ? 'bg-[#007BA7] text-white'
-                          : 'text-[#B8B8C2] hover:text-white'
+                          : 'text-[var(--z-text-secondary)] hover:text-[var(--z-text-primary)]'
                       }`}
                     >
                       {tpl} Target
@@ -533,7 +535,7 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
             </div>
 
             {cameraStreamError && (
-              <div className="text-xs text-[#B8B8C2] bg-[#22222A] border border-[#34343D] rounded-lg px-3 py-2">
+              <div className="text-xs text-[var(--z-text-secondary)] bg-[var(--z-elevated)] border border-[var(--z-border)] rounded-lg px-3 py-2">
                 {cameraStreamError}
               </div>
             )}
@@ -547,7 +549,6 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
                     alt="Captured document awaiting confirmation"
                     className="max-w-full max-h-full object-contain rounded-lg"
                   />
-                  {/* Visual Neon Rose boundary frame overlay */}
                   <div
                     className="absolute border-2 border-[#FF2D95] pointer-events-none rounded-sm"
                     style={{
@@ -578,7 +579,6 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
                     alt="Live optical scanner preview"
                     className="max-w-full max-h-full object-contain rounded-lg opacity-95"
                   />
-                  {/* Scanning Guide Overlay */}
                   <div className="absolute inset-5 border-2 border-dashed border-[#007BA7] rounded-xl pointer-events-none flex flex-col justify-between p-3">
                     <div className="text-[11px] font-mono text-white bg-[#0A0A0A]/85 self-center px-3 py-1 rounded">
                       Auto-Boundary Lock · Align Document Edges Within Frame
@@ -591,11 +591,10 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
               )}
             </div>
 
-            {/* Corner Boundary Preset Controls when a capture is pending */}
             {pendingRawCapture ? (
               <div className="space-y-3 pt-1">
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#B8B8C2]">
-                  <span className="inline-flex items-center gap-1.5 font-medium text-white">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--z-text-secondary)]">
+                  <span className="inline-flex items-center gap-1.5 font-medium text-[var(--z-text-primary)]">
                     <Crop className="w-4 h-4 text-[#FF2D95]" />
                     <span>Boundary &amp; Corner Crop Adjustment:</span>
                   </span>
@@ -610,7 +609,7 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
                           bottomLeft: { x: 0.04, y: 0.96 },
                         })
                       }
-                      className="px-2.5 py-1 rounded bg-[#22222A] hover:bg-[#2c2c36] text-white text-xs cursor-pointer"
+                      className="px-2.5 py-1 rounded bg-[var(--z-elevated)] border border-[var(--z-border)] text-[var(--z-text-primary)] text-xs cursor-pointer"
                     >
                       Auto Paper Edges
                     </button>
@@ -624,7 +623,7 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
                           bottomLeft: { x: 0.08, y: 0.85 },
                         })
                       }
-                      className="px-2.5 py-1 rounded bg-[#22222A] hover:bg-[#2c2c36] text-white text-xs cursor-pointer"
+                      className="px-2.5 py-1 rounded bg-[var(--z-elevated)] border border-[var(--z-border)] text-[var(--z-text-primary)] text-xs cursor-pointer"
                     >
                       Tight Content Crop
                     </button>
@@ -638,7 +637,7 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
                           bottomLeft: { x: 0, y: 1 },
                         })
                       }
-                      className="px-2.5 py-1 rounded bg-[#22222A] hover:bg-[#2c2c36] text-white text-xs cursor-pointer"
+                      className="px-2.5 py-1 rounded bg-[var(--z-elevated)] border border-[var(--z-border)] text-[var(--z-text-primary)] text-xs cursor-pointer"
                     >
                       Full Frame
                     </button>
@@ -649,7 +648,7 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setPendingRawCapture(null)}
-                    className="min-h-[48px] px-4 py-2.5 rounded-xl bg-[#22222A] hover:bg-[#2c2c36] border border-[#34343D] text-white text-sm font-medium inline-flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                    className="min-h-[48px] px-4 py-2.5 rounded-xl bg-[var(--z-elevated)] border border-[var(--z-border)] text-[var(--z-text-primary)] text-sm font-medium inline-flex items-center justify-center gap-2 transition-colors cursor-pointer"
                   >
                     <RefreshCw className="w-4 h-4" />
                     <span>Retake Capture</span>
@@ -681,29 +680,27 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
 
           {/* Right Column: Multi-Page Tray, Image Enhancement Controls, & PDF Export */}
           <div className="lg:col-span-5 space-y-5">
-            {/* Active Page Preview & Enhancement Suite */}
-            <div className="bg-[#17171C] border border-[#34343D] rounded-2xl p-5 space-y-4">
+            <div className="bg-[var(--z-surface)] border border-[var(--z-border)] rounded-2xl p-5 space-y-4 shadow-sm">
               <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold text-white flex items-center gap-2">
+                <h2 className="text-base font-semibold text-[var(--z-text-primary)] flex items-center gap-2">
                   <Sliders className="w-4 h-4 text-[#007BA7]" />
                   <span>Page Enhancement &amp; Geometry</span>
                 </h2>
                 {currentPage && (
-                  <span className="text-xs font-mono text-[#B8B8C2] tabular-nums">
+                  <span className="text-xs font-mono text-[var(--z-text-secondary)] tabular-nums">
                     Page {selectedIndex + 1} of {pages.length}
                   </span>
                 )}
               </div>
 
               {!currentPage ? (
-                <div className="bg-[#22222A] border border-[#34343D] rounded-xl p-6 text-center text-sm text-[#B8B8C2]">
+                <div className="bg-[var(--z-elevated)] border border-[var(--z-border)] rounded-xl p-6 text-center text-sm text-[var(--z-text-secondary)]">
                   Capture a page on the left (and tap Accept Page) or import an image to unlock
                   live enhancement filters, rotation, and multi-page PDF creation.
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {/* Processed Page Live Preview */}
-                  <div className="relative w-full h-56 bg-[#0A0A0A] border border-[#34343D] rounded-xl overflow-hidden flex items-center justify-center p-2">
+                  <div className="relative w-full h-56 bg-[#0A0A0A] border border-[var(--z-border)] rounded-xl overflow-hidden flex items-center justify-center p-2">
                     <img
                       src={currentPage.processedDataUrl}
                       alt={`Processed page ${selectedIndex + 1}`}
@@ -716,9 +713,8 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
                     )}
                   </div>
 
-                  {/* 4 Required Enhancement Filter Presets */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-[#B8B8C2]">
+                    <label className="text-xs font-medium text-[var(--z-text-secondary)]">
                       Enhancement Filter Mode (Non-Destructive)
                     </label>
                     <div className="grid grid-cols-2 gap-2">
@@ -734,7 +730,7 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
                             className={`min-h-[40px] px-3 py-2 rounded-xl text-xs font-medium border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                               active
                                 ? 'bg-[#007BA7] border-[#FF2D95] text-white'
-                                : 'bg-[#22222A] border-[#34343D] text-[#B8B8C2] hover:text-white'
+                                : 'bg-[var(--z-elevated)] border-[var(--z-border)] text-[var(--z-text-secondary)] hover:text-[var(--z-text-primary)]'
                             }`}
                           >
                             {ENHANCEMENT_LABELS[mode]}
@@ -744,10 +740,9 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Brightness & Contrast Sliders */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                     <div>
-                      <div className="flex justify-between text-xs text-[#B8B8C2] mb-1">
+                      <div className="flex justify-between text-xs text-[var(--z-text-secondary)] mb-1">
                         <label htmlFor="brightness-slider">Brightness</label>
                         <span className="font-mono tabular-nums">{currentPage.brightness}</span>
                       </div>
@@ -768,7 +763,7 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-xs text-[#B8B8C2] mb-1">
+                      <div className="flex justify-between text-xs text-[var(--z-text-secondary)] mb-1">
                         <label htmlFor="contrast-slider">Contrast</label>
                         <span className="font-mono tabular-nums">
                           {currentPage.contrast.toFixed(1)}x
@@ -791,8 +786,7 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Page Actions: Rotate, Reorder, Recapture, Remove */}
-                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#34343D]">
+                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[var(--z-border)]">
                     <button
                       type="button"
                       onClick={() =>
@@ -800,7 +794,7 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
                           rotationDegrees: currentPage.rotationDegrees + 90,
                         })
                       }
-                      className="min-h-[40px] px-3 py-1.5 rounded-lg bg-[#22222A] hover:bg-[#2c2c36] border border-[#34343D] text-white text-xs inline-flex items-center gap-1.5 cursor-pointer"
+                      className="min-h-[40px] px-3 py-1.5 rounded-lg bg-[var(--z-elevated)] border border-[var(--z-border)] text-[var(--z-text-primary)] text-xs inline-flex items-center gap-1.5 cursor-pointer"
                     >
                       <RotateCw className="w-3.5 h-3.5 text-[#007BA7]" />
                       <span>Rotate 90°</span>
@@ -816,7 +810,7 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
                         }
                       }}
                       aria-label="Move Page Earlier"
-                      className="min-h-[40px] px-2.5 py-1.5 rounded-lg bg-[#22222A] disabled:opacity-40 border border-[#34343D] text-white text-xs inline-flex items-center gap-1 cursor-pointer"
+                      className="min-h-[40px] px-2.5 py-1.5 rounded-lg bg-[var(--z-elevated)] disabled:opacity-40 border border-[var(--z-border)] text-[var(--z-text-primary)] text-xs inline-flex items-center gap-1 cursor-pointer"
                     >
                       <ArrowLeft className="w-3.5 h-3.5" />
                       <span>Move Left</span>
@@ -832,7 +826,7 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
                         }
                       }}
                       aria-label="Move Page Later"
-                      className="min-h-[40px] px-2.5 py-1.5 rounded-lg bg-[#22222A] disabled:opacity-40 border border-[#34343D] text-white text-xs inline-flex items-center gap-1 cursor-pointer"
+                      className="min-h-[40px] px-2.5 py-1.5 rounded-lg bg-[var(--z-elevated)] disabled:opacity-40 border border-[var(--z-border)] text-[var(--z-text-primary)] text-xs inline-flex items-center gap-1 cursor-pointer"
                     >
                       <span>Move Right</span>
                       <ArrowRight className="w-3.5 h-3.5" />
@@ -841,7 +835,7 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
                     <button
                       type="button"
                       onClick={handleRecaptureCurrentPage}
-                      className="min-h-[40px] px-2.5 py-1.5 rounded-lg bg-[#22222A] hover:bg-[#2c2c36] border border-[#34343D] text-white text-xs inline-flex items-center gap-1 cursor-pointer"
+                      className="min-h-[40px] px-2.5 py-1.5 rounded-lg bg-[var(--z-elevated)] border border-[var(--z-border)] text-[var(--z-text-primary)] text-xs inline-flex items-center gap-1 cursor-pointer"
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
                       <span>Recapture</span>
@@ -855,7 +849,7 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
                         setSelectedIndex(res.nextSelectedIndex);
                       }}
                       aria-label={`Remove Page ${selectedIndex + 1}`}
-                      className="min-h-[40px] px-2.5 py-1.5 rounded-lg bg-[#22222A] hover:bg-[#FF5252]/20 border border-[#34343D] text-[#FF5252] text-xs inline-flex items-center gap-1 ml-auto cursor-pointer"
+                      className="min-h-[40px] px-2.5 py-1.5 rounded-lg bg-[var(--z-elevated)] hover:bg-[#FF5252]/20 border border-[var(--z-border)] text-[#FF5252] text-xs inline-flex items-center gap-1 ml-auto cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>Remove</span>
@@ -873,7 +867,9 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
                           onClick={() => setSelectedIndex(idx)}
                           aria-label={`Select Page ${idx + 1}`}
                           className={`relative w-14 h-18 rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
-                            isSel ? 'border-[#FF2D95]' : 'border-[#34343D] opacity-75 hover:opacity-100'
+                            isSel
+                              ? 'border-[#FF2D95]'
+                              : 'border-[var(--z-border)] opacity-75 hover:opacity-100'
                           }`}
                         >
                           <img
@@ -893,11 +889,16 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
             </div>
 
             {/* PDF Creation & Export Panel */}
-            <div className="bg-[#17171C] border border-[#34343D] rounded-2xl p-5 space-y-4">
-              <h2 className="text-base font-semibold text-white">PDF Creation &amp; Local Export</h2>
+            <div className="bg-[var(--z-surface)] border border-[var(--z-border)] rounded-2xl p-5 space-y-4 shadow-sm">
+              <h2 className="text-base font-semibold text-[var(--z-text-primary)]">
+                PDF Creation &amp; Local Export
+              </h2>
 
               <div className="space-y-1.5">
-                <label htmlFor="pdf-filename-input" className="text-xs font-medium text-[#B8B8C2]">
+                <label
+                  htmlFor="pdf-filename-input"
+                  className="text-xs font-medium text-[var(--z-text-secondary)]"
+                >
                   Custom PDF Filename
                 </label>
                 <input
@@ -909,19 +910,22 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
                     setErrorBanner(null);
                   }}
                   placeholder="Enter document filename"
-                  className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-[#0A0A0A] border border-[#34343D] focus:border-[#007BA7] focus:outline-none text-sm text-white"
+                  className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--z-bg)] border border-[var(--z-border)] focus:border-[#007BA7] focus:outline-none text-sm text-[var(--z-text-primary)]"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="pdf-pagesize-select" className="text-xs font-medium text-[#B8B8C2]">
+                <label
+                  htmlFor="pdf-pagesize-select"
+                  className="text-xs font-medium text-[var(--z-text-secondary)]"
+                >
                   PDF Page Size
                 </label>
                 <select
                   id="pdf-pagesize-select"
                   value={pageSize}
                   onChange={(e) => setPageSize(e.target.value as PdfPageSize)}
-                  className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-[#0A0A0A] border border-[#34343D] focus:border-[#007BA7] focus:outline-none text-sm text-white"
+                  className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--z-bg)] border border-[var(--z-border)] focus:border-[#007BA7] focus:outline-none text-sm text-[var(--z-text-primary)]"
                 >
                   {Object.values(PdfPageSize).map((sz) => (
                     <option key={sz} value={sz}>
@@ -932,8 +936,8 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
               </div>
 
               {confirmOverwriteOpen && (
-                <div className="bg-[#22222A] border border-[#FF2D95] rounded-xl p-3.5 space-y-2.5">
-                  <p className="text-xs text-white">
+                <div className="bg-[var(--z-elevated)] border border-[#FF2D95] rounded-xl p-3.5 space-y-2.5">
+                  <p className="text-xs text-[var(--z-text-primary)]">
                     A document with this name already exists locally. Do you want to overwrite it?
                   </p>
                   <div className="flex items-center gap-2">
@@ -947,7 +951,7 @@ export const ScannerEditorView: React.FC<ScannerEditorViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setConfirmOverwriteOpen(false)}
-                      className="px-3 py-1.5 rounded-lg bg-[#17171C] text-[#B8B8C2] text-xs cursor-pointer"
+                      className="px-3 py-1.5 rounded-lg bg-[var(--z-surface)] text-[var(--z-text-secondary)] text-xs cursor-pointer"
                     >
                       Cancel
                     </button>

@@ -1,4 +1,5 @@
 import {
+  ThemeMode,
   EnhancementMode,
   PdfPageSize,
   reconcileDocumentIntegrity,
@@ -14,6 +15,7 @@ const IDB_NAME = 'zview_local_storage_db';
 const IDB_STORE = 'document_contents';
 
 const DEFAULT_SETTINGS: ZViewSettings = {
+  themeMode: ThemeMode.SYSTEM,
   defaultPageSize: PdfPageSize.A4,
   defaultEnhancement: EnhancementMode.DOCUMENT_ENHANCE,
   cloudSyncEnabled: false,

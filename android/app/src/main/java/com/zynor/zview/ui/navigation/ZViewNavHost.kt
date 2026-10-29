@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -25,13 +26,6 @@ import com.zynor.zview.ui.screens.DocumentsScreen
 import com.zynor.zview.ui.screens.HomeScreen
 import com.zynor.zview.ui.screens.ScannerScreen
 import com.zynor.zview.ui.screens.SettingsScreen
-import com.zynor.zview.ui.theme.CeruleanBlue
-import com.zynor.zview.ui.theme.DarkSurface
-import com.zynor.zview.ui.theme.ElevatedSurface
-import com.zynor.zview.ui.theme.JetBlack
-import com.zynor.zview.ui.theme.NeonRose
-import com.zynor.zview.ui.theme.PureWhite
-import com.zynor.zview.ui.theme.SecondaryText
 import com.zynor.zview.ui.viewmodel.ZViewViewModel
 
 object Routes {
@@ -48,14 +42,15 @@ fun ZViewNavHost(viewModel: ZViewViewModel) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    val colors = MaterialTheme.colorScheme
 
     val showBottomBar = currentRoute in listOf(Routes.HOME, Routes.DOCUMENTS, Routes.SETTINGS)
 
     Scaffold(
-        containerColor = JetBlack,
+        containerColor = colors.background,
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar(containerColor = DarkSurface) {
+                NavigationBar(containerColor = colors.surface) {
                     val items = listOf(
                         Triple(Routes.HOME, "Home", Icons.Default.Home),
                         Triple(Routes.DOCUMENTS, "Documents", Icons.Default.Description),
@@ -77,11 +72,11 @@ fun ZViewNavHost(viewModel: ZViewViewModel) {
                             icon = { Icon(imageVector = icon, contentDescription = label) },
                             label = { Text(text = label) },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = PureWhite,
-                                selectedTextColor = NeonRose,
-                                indicatorColor = CeruleanBlue.copy(alpha = 0.25f),
-                                unselectedIconColor = SecondaryText,
-                                unselectedTextColor = SecondaryText
+                                selectedIconColor = colors.primary,
+                                selectedTextColor = colors.secondary,
+                                indicatorColor = colors.primary.copy(alpha = 0.18f),
+                                unselectedIconColor = colors.onSurfaceVariant,
+                                unselectedTextColor = colors.onSurfaceVariant
                             )
                         )
                     }
@@ -99,20 +94,44 @@ fun ZViewNavHost(viewModel: ZViewViewModel) {
                     viewModel = viewModel,
                     onStartScan = {
                         viewModel.startNewScanSession()
-                        navController.navigate(Routes.SCANNER)
+                        navController.navigate(Routes.SCANNER) {
+                            launchSingleTop = true
+                        }
                     },
-                    onOpenDocuments = { navController.navigate(Routes.DOCUMENTS) },
-                    onOpenSettings = { navController.navigate(Routes.SETTINGS) },
-                    onOpenPreview = { docId -> navController.navigate(Routes.previewRoute(docId)) }
+                    onOpenDocuments = {
+                        navController.navigate(Routes.DOCUMENTS) {
+                            popUpTo(Routes.HOME) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onOpenSettings = {
+                        navController.navigate(Routes.SETTINGS) {
+                            popUpTo(Routes.HOME) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onOpenPreview = { docId ->
+                        navController.navigate(Routes.previewRoute(docId)) {
+                            launchSingleTop = true
+                        }
+                    }
                 )
             }
             composable(Routes.DOCUMENTS) {
                 DocumentsScreen(
                     viewModel = viewModel,
-                    onOpenPreview = { docId -> navController.navigate(Routes.previewRoute(docId)) },
+                    onOpenPreview = { docId ->
+                        navController.navigate(Routes.previewRoute(docId)) {
+                            launchSingleTop = true
+                        }
+                    },
                     onStartScan = {
                         viewModel.startNewScanSession()
-                        navController.navigate(Routes.SCANNER)
+                        navController.navigate(Routes.SCANNER) {
+                            launchSingleTop = true
+                        }
                     }
                 )
             }
@@ -123,6 +142,7 @@ fun ZViewNavHost(viewModel: ZViewViewModel) {
                     onFinishedExport = { savedDoc ->
                         navController.navigate(Routes.previewRoute(savedDoc.id)) {
                             popUpTo(Routes.HOME)
+                            launchSingleTop = true
                         }
                     }
                 )

@@ -5,6 +5,12 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
+enum class AppThemeMode(val displayName: String) {
+    SYSTEM("System Default"),
+    LIGHT("Light Mode"),
+    DARK("Dark Mode")
+}
+
 enum class EnhancementMode(val displayName: String) {
     ORIGINAL("Original Color"),
     GRAYSCALE("Grayscale"),

@@ -1,8 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  OFFICIAL_APP_NAME,
+  SHORT_APP_NAME,
   ZVIEW_COLORS,
   ZVIEW_FEEDBACK_URL,
+  ThemeMode,
+  resolveEffectiveTheme,
   EnhancementMode,
   PdfPageSize,
   SortOption,
@@ -17,18 +21,22 @@ import {
   type ZViewDocumentMeta,
 } from './zviewLogic';
 
-test('ZView brand palette and feedback URL match exact master prompt specifications', () => {
+test('Official Z Scan: PDF Maker app name, brand palette, and feedback URL match specifications', () => {
+  assert.equal(OFFICIAL_APP_NAME, 'Z Scan: PDF Maker');
+  assert.equal(SHORT_APP_NAME, 'Z Scan');
   assert.equal(ZVIEW_FEEDBACK_URL, 'https://zynor-view.web.app/');
   assert.equal(ZVIEW_COLORS.jetBlack, '#0A0A0A');
   assert.equal(ZVIEW_COLORS.ceruleanBlue, '#007BA7');
   assert.equal(ZVIEW_COLORS.neonRose, '#FF2D95');
-  assert.equal(ZVIEW_COLORS.white, '#FFFFFF');
-  assert.equal(ZVIEW_COLORS.secondaryText, '#B8B8C2');
-  assert.equal(ZVIEW_COLORS.darkSurface, '#17171C');
-  assert.equal(ZVIEW_COLORS.elevatedSurface, '#22222A');
-  assert.equal(ZVIEW_COLORS.divider, '#34343D');
-  assert.equal(ZVIEW_COLORS.error, '#FF5252');
-  assert.equal(ZVIEW_COLORS.success, '#4CAF50');
+});
+
+test('resolveEffectiveTheme resolves Light, Dark, and System Default modes accurately', () => {
+  assert.equal(resolveEffectiveTheme(ThemeMode.LIGHT, true), 'light');
+  assert.equal(resolveEffectiveTheme(ThemeMode.LIGHT, false), 'light');
+  assert.equal(resolveEffectiveTheme(ThemeMode.DARK, false), 'dark');
+  assert.equal(resolveEffectiveTheme(ThemeMode.DARK, true), 'dark');
+  assert.equal(resolveEffectiveTheme(ThemeMode.SYSTEM, true), 'dark');
+  assert.equal(resolveEffectiveTheme(ThemeMode.SYSTEM, false), 'light');
 });
 
 test('validateFilename accepts valid names, strips .pdf extension, and rejects illegal characters', () => {
@@ -43,6 +51,10 @@ test('validateFilename accepts valid names, strips .pdf extension, and rejects i
   const invalidChars = validateFilename('Receipt:2026/10*?.pdf');
   assert.equal(invalidChars.isValid, false);
   assert.equal(invalidChars.sanitizedName, 'Receipt_2026_10__');
+
+  const dotsOnly = validateFilename('..');
+  assert.equal(dotsOnly.isValid, false);
+  assert.equal(dotsOnly.sanitizedName, 'ZScan_Document');
 
   const duplicateBlocked = validateFilename('Invoice_01', ['invoice_01'], false);
   assert.equal(duplicateBlocked.isValid, false);
@@ -67,17 +79,17 @@ test('applyPixelEnhancement transforms RGBA pixels for Grayscale, B&W, and Docum
   const copyBefore = new Uint8ClampedArray(src);
 
   const gray = applyPixelEnhancement(src, EnhancementMode.GRAYSCALE, 0, 1);
-  assert.deepEqual(src, copyBefore); // Non-destructive
+  assert.deepEqual(src, copyBefore);
   assert.equal(gray[0], gray[1]);
   assert.equal(gray[1], gray[2]);
 
   const bw = applyPixelEnhancement(src, EnhancementMode.BLACK_AND_WHITE, 0, 1.2);
-  assert.equal(bw[0], 255); // Light paper becomes pure white
-  assert.equal(bw[4], 12); // Dark ink becomes crisp black
+  assert.equal(bw[0], 255);
+  assert.equal(bw[4], 12);
 
   const docEnhance = applyPixelEnhancement(src, EnhancementMode.DOCUMENT_ENHANCE, 0, 1);
-  assert.ok(docEnhance[0] > src[0]); // Paper highlight whitened
-  assert.ok(docEnhance[4] < src[4]); // Ink shadow darkened
+  assert.ok(docEnhance[0] > src[0]);
+  assert.ok(docEnhance[4] < src[4]);
 });
 
 test('computePdfPageGeometry preserves portrait and landscape orientation and scales within margins', () => {

@@ -124,7 +124,7 @@ export async function shareOrDownloadPdf(dataUrl: string, documentName: string):
       if (navigator.canShare({ files: [file] })) {
         await navigator.share({
           title: safeName,
-          text: `Shared from ZView Document Scanner: ${safeName}`,
+          text: `Shared from Z Scan: PDF Maker: ${safeName}`,
           files: [file],
         });
         return 'shared';

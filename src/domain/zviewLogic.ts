@@ -1,3 +1,5 @@
+export const OFFICIAL_APP_NAME = 'Z Scan: PDF Maker';
+export const SHORT_APP_NAME = 'Z Scan';
 export const ZVIEW_FEEDBACK_URL = 'https://zynor-view.web.app/';
 
 export const ZVIEW_COLORS = {
@@ -12,6 +14,27 @@ export const ZVIEW_COLORS = {
   error: '#FF5252',
   success: '#4CAF50',
 } as const;
+
+export enum ThemeMode {
+  SYSTEM = 'SYSTEM',
+  LIGHT = 'LIGHT',
+  DARK = 'DARK',
+}
+
+export const THEME_MODE_LABELS: Record<ThemeMode, string> = {
+  [ThemeMode.SYSTEM]: 'System Default',
+  [ThemeMode.LIGHT]: 'Light Mode',
+  [ThemeMode.DARK]: 'Dark Mode',
+};
+
+export function resolveEffectiveTheme(
+  mode: ThemeMode,
+  systemPrefersDark: boolean
+): 'light' | 'dark' {
+  if (mode === ThemeMode.LIGHT) return 'light';
+  if (mode === ThemeMode.DARK) return 'dark';
+  return systemPrefersDark ? 'dark' : 'light';
+}
 
 export enum EnhancementMode {
   ORIGINAL = 'ORIGINAL',
@@ -92,6 +115,7 @@ export interface ZViewDocumentContent {
 }
 
 export interface ZViewSettings {
+  themeMode: ThemeMode;
   defaultPageSize: PdfPageSize;
   defaultEnhancement: EnhancementMode;
   cloudSyncEnabled: boolean;
@@ -167,7 +191,7 @@ export function validateFilename(
   if (trimmed === '.' || trimmed === '..') {
     return {
       isValid: false,
-      sanitizedName: 'ZView_Scan',
+      sanitizedName: 'ZScan_Document',
       requiresOverwriteConfirm: false,
       errorMessage: 'Filename cannot consist only of dots.',
     };
@@ -297,7 +321,6 @@ export function applyPixelEnhancement(
       output[i + 3] = a;
       continue;
     } else if (mode === EnhancementMode.DOCUMENT_ENHANCE) {
-      // Boost paper whiteness in highlights and deepen ink contrast in shadows
       const boostChannel = (c: number) => {
         const normalized = c / 255;
         const sCurve = normalized > 0.62

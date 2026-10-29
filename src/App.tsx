@@ -6,7 +6,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Home, FileText, Settings as SettingsIcon, Camera } from 'lucide-react';
 import {
+  OFFICIAL_APP_NAME,
   DEFAULT_CROP_BOUNDS,
+  ThemeMode,
+  resolveEffectiveTheme,
   type ScannedPage,
   type ZViewDocumentContent,
   type ZViewDocumentMeta,
@@ -41,6 +44,11 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [documents, setDocuments] = useState<ZViewDocumentMeta[]>([]);
   const [settings, setSettings] = useState<ZViewSettings>(() => loadSettingsSync());
+  const [systemPrefersDark, setSystemPrefersDark] = useState<boolean>(() =>
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches
+      : true
+  );
   const [isLoadingDocs, setIsLoadingDocs] = useState<boolean>(true);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [statusToast, setStatusToast] = useState<string | null>(null);
@@ -51,9 +59,32 @@ export default function App() {
   // Active preview document
   const [previewDocId, setPreviewDocId] = useState<string | null>(null);
   const [previewContent, setPreviewContent] = useState<ZViewDocumentContent | null>(null);
+  const [isLoadingPreview, setIsLoadingPreview] = useState<boolean>(false);
 
   // Android Studio Project Explorer Drawer
   const [androidDrawerOpen, setAndroidDrawerOpen] = useState<boolean>(false);
+
+  // Listen to OS dark/light mode changes for ThemeMode.SYSTEM
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const mql = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e: MediaQueryListEvent) => setSystemPrefersDark(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
+
+  // Apply resolved theme ('light' or 'dark') to document.documentElement
+  const effectiveTheme = resolveEffectiveTheme(
+    settings.themeMode ?? ThemeMode.SYSTEM,
+    systemPrefersDark
+  );
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(effectiveTheme);
+    root.setAttribute('data-theme', effectiveTheme);
+  }, [effectiveTheme]);
 
   const refreshDocuments = useCallback(async () => {
     setIsLoadingDocs(true);
@@ -155,7 +186,9 @@ export default function App() {
     const existingMatch = documents.find(
       (d) => d.name.toLowerCase() === params.documentName.toLowerCase()
     );
-    const docId = existingMatch ? existingMatch.id : `doc_${now}_${Math.random().toString(36).slice(2, 7)}`;
+    const docId = existingMatch
+      ? existingMatch.id
+      : `doc_${now}_${Math.random().toString(36).slice(2, 7)}`;
 
     const newMeta: ZViewDocumentMeta = {
       id: docId,
@@ -184,20 +217,26 @@ export default function App() {
     saveMetadataListSync(updatedList);
     setDocuments(updatedList);
 
-    // 3. Trigger PDF download and open preview
+    // 3. Trigger PDF download and open in-app PDF viewer
     triggerPdfDownload(generated.dataUrl, generated.sanitizedFilename);
     setPreviewDocId(docId);
     setPreviewContent(newContent);
+    setIsLoadingPreview(false);
     setActiveTab('preview');
     showToast(`Saved "${generated.sanitizedFilename}" (${params.pages.length} pages) locally.`);
   };
 
   const handleOpenPreview = async (docId: string) => {
     setGlobalError(null);
-    const content = await loadDocumentContentLocal(docId);
     setPreviewDocId(docId);
-    setPreviewContent(content);
+    setIsLoadingPreview(true);
     setActiveTab('preview');
+    try {
+      const content = await loadDocumentContentLocal(docId);
+      setPreviewContent(content);
+    } finally {
+      setIsLoadingPreview(false);
+    }
   };
 
   const handleRenameDocument = async (docId: string, newSanitizedName: string) => {
@@ -260,7 +299,7 @@ export default function App() {
       if (c) contents[meta.id] = c;
     }
     const payload = {
-      app: 'ZView',
+      app: OFFICIAL_APP_NAME,
       version: '1.0.0',
       exportedAt: Date.now(),
       documents,
@@ -270,20 +309,20 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `zview_cloud_backup_${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `zscan_pdf_maker_backup_${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     handleUpdateSettings({ lastCloudBackupAt: Date.now(), cloudSyncEnabled: true });
-    showToast('Exported portable ZView backup archive.');
+    showToast(`Exported portable ${OFFICIAL_APP_NAME} backup archive.`);
   };
 
   const handleImportCloudBackup = async (file: File) => {
     const text = await file.text();
     const parsed = JSON.parse(text);
     if (!parsed || !Array.isArray(parsed.documents)) {
-      throw new Error('Invalid ZView backup archive format.');
+      throw new Error(`Invalid ${OFFICIAL_APP_NAME} backup archive format.`);
     }
     for (const meta of parsed.documents as ZViewDocumentMeta[]) {
       const content = parsed.contents?.[meta.id] as ZViewDocumentContent | undefined;
@@ -301,36 +340,36 @@ export default function App() {
 
   return (
     <div
-      className={`min-h-screen bg-[#0A0A0A] text-white flex flex-col pb-20 md:pb-10 ${
+      className={`min-h-screen bg-[var(--z-bg)] text-[var(--z-text-primary)] flex flex-col pb-20 md:pb-10 transition-colors duration-150 ${
         settings.highContrastBorders ? '[&_*]:border-opacity-100' : ''
       }`}
     >
       {/* Top Bar Contract: 3 Zones separated by gap-8 */}
-      <header className="sticky top-0 z-30 bg-[#0A0A0A]/95 backdrop-blur-md border-b border-[#34343D] px-4 sm:px-8 h-14 flex items-center justify-between gap-8">
-        {/* Zone 1: Single text element wordmark */}
+      <header className="sticky top-0 z-30 bg-[var(--z-bg)]/95 backdrop-blur-md border-b border-[var(--z-border)] px-4 sm:px-8 h-14 flex items-center justify-between gap-8">
+        {/* Zone 1: Single text element wordmark with official app name */}
         <a
           href="#home"
           onClick={(e) => {
             e.preventDefault();
             setActiveTab('home');
           }}
-          className="text-lg font-bold tracking-tight text-white whitespace-nowrap shrink-0"
+          className="text-lg font-bold tracking-tight text-[var(--z-text-primary)] whitespace-nowrap shrink-0"
         >
-          ZView
+          {OFFICIAL_APP_NAME}
         </a>
 
         {/* Zone 2: 4 concise single-line text navigation links */}
         <nav
           aria-label="Primary Navigation"
-          className="hidden md:flex items-center gap-6 text-sm font-medium text-[#B8B8C2]"
+          className="hidden md:flex items-center gap-6 text-sm font-medium text-[var(--z-text-secondary)]"
         >
           <button
             type="button"
             onClick={() => setActiveTab('home')}
             className={`py-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
               activeTab === 'home'
-                ? 'text-white underline decoration-[#FF2D95] decoration-2 underline-offset-8'
-                : 'hover:text-white'
+                ? 'text-[var(--z-text-primary)] underline decoration-[#FF2D95] decoration-2 underline-offset-8'
+                : 'hover:text-[var(--z-text-primary)]'
             }`}
           >
             Home
@@ -340,8 +379,8 @@ export default function App() {
             onClick={handleStartFreshScan}
             className={`py-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
               activeTab === 'scanner'
-                ? 'text-white underline decoration-[#FF2D95] decoration-2 underline-offset-8'
-                : 'hover:text-white'
+                ? 'text-[var(--z-text-primary)] underline decoration-[#FF2D95] decoration-2 underline-offset-8'
+                : 'hover:text-[var(--z-text-primary)]'
             }`}
           >
             Scanner
@@ -351,8 +390,8 @@ export default function App() {
             onClick={() => setActiveTab('documents')}
             className={`py-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
               activeTab === 'documents' || activeTab === 'preview'
-                ? 'text-white underline decoration-[#FF2D95] decoration-2 underline-offset-8'
-                : 'hover:text-white'
+                ? 'text-[var(--z-text-primary)] underline decoration-[#FF2D95] decoration-2 underline-offset-8'
+                : 'hover:text-[var(--z-text-primary)]'
             }`}
           >
             Documents
@@ -362,8 +401,8 @@ export default function App() {
             onClick={() => setActiveTab('settings')}
             className={`py-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
               activeTab === 'settings'
-                ? 'text-white underline decoration-[#FF2D95] decoration-2 underline-offset-8'
-                : 'hover:text-white'
+                ? 'text-[var(--z-text-primary)] underline decoration-[#FF2D95] decoration-2 underline-offset-8'
+                : 'hover:text-[var(--z-text-primary)]'
             }`}
           >
             Settings
@@ -387,13 +426,13 @@ export default function App() {
         {statusToast && (
           <div
             role="status"
-            className="mb-5 bg-[#17171C] border border-[#4CAF50] rounded-xl px-4 py-3 text-xs font-medium text-[#4CAF50] flex items-center justify-between"
+            className="mb-5 bg-[var(--z-surface)] border border-[#4CAF50] rounded-xl px-4 py-3 text-xs font-medium text-[#4CAF50] flex items-center justify-between"
           >
             <span>{statusToast}</span>
             <button
               type="button"
               onClick={() => setStatusToast(null)}
-              className="text-[#B8B8C2] hover:text-white text-xs ml-4 cursor-pointer"
+              className="text-[var(--z-text-secondary)] hover:text-[var(--z-text-primary)] text-xs ml-4 cursor-pointer"
             >
               Dismiss
             </button>
@@ -440,6 +479,7 @@ export default function App() {
           <DocumentPreviewModal
             meta={activePreviewMeta}
             content={previewContent}
+            isLoadingContent={isLoadingPreview}
             existingNames={documents.map((d) => d.name)}
             onClose={() => setActiveTab('documents')}
             onShareOrDownload={handleShareOrDownloadPdf}
@@ -464,13 +504,13 @@ export default function App() {
       {/* Mobile Bottom Navigation Bar (<= 56px height to respect 15% sticky viewport cap) */}
       <nav
         aria-label="Mobile Bottom Navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-30 h-14 bg-[#17171C]/95 backdrop-blur-md border-t border-[#34343D] grid grid-cols-4 items-center px-2"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-30 h-14 bg-[var(--z-surface)]/95 backdrop-blur-md border-t border-[var(--z-border)] grid grid-cols-4 items-center px-2"
       >
         <button
           type="button"
           onClick={() => setActiveTab('home')}
           className={`min-h-[44px] flex flex-col items-center justify-center rounded-lg cursor-pointer ${
-            activeTab === 'home' ? 'text-[#FF2D95]' : 'text-[#B8B8C2]'
+            activeTab === 'home' ? 'text-[#FF2D95]' : 'text-[var(--z-text-secondary)]'
           }`}
         >
           <Home className="w-5 h-5" />
@@ -494,7 +534,7 @@ export default function App() {
           className={`min-h-[44px] flex flex-col items-center justify-center rounded-lg cursor-pointer ${
             activeTab === 'documents' || activeTab === 'preview'
               ? 'text-[#FF2D95]'
-              : 'text-[#B8B8C2]'
+              : 'text-[var(--z-text-secondary)]'
           }`}
         >
           <FileText className="w-5 h-5" />
@@ -505,7 +545,7 @@ export default function App() {
           type="button"
           onClick={() => setActiveTab('settings')}
           className={`min-h-[44px] flex flex-col items-center justify-center rounded-lg cursor-pointer ${
-            activeTab === 'settings' ? 'text-[#FF2D95]' : 'text-[#B8B8C2]'
+            activeTab === 'settings' ? 'text-[#FF2D95]' : 'text-[var(--z-text-secondary)]'
           }`}
         >
           <SettingsIcon className="w-5 h-5" />

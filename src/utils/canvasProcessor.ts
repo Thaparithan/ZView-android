@@ -161,7 +161,7 @@ export function renderSampleDocumentSheet(template: SampleTemplateType = 'invoic
   // Footer metadata on physical sheet
   ctx.font = '15px monospace';
   ctx.fillStyle = '#686D78';
-  ctx.fillText('Scanned locally with ZView Document Scanner · 300 DPI Optical Capture', 84, 1095);
+  ctx.fillText('Scanned locally with Z Scan: PDF Maker · 300 DPI Optical Capture', 84, 1095);
 
   return canvas.toDataURL('image/jpeg', 0.92);
 }

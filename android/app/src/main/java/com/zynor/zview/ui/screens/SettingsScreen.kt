@@ -39,25 +39,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.zynor.zview.data.local.AppThemeMode
 import com.zynor.zview.data.local.EnhancementMode
 import com.zynor.zview.data.local.PdfPageSize
-import com.zynor.zview.ui.theme.CeruleanBlue
-import com.zynor.zview.ui.theme.DarkSurface
-import com.zynor.zview.ui.theme.DividerColor
-import com.zynor.zview.ui.theme.ErrorRed
 import com.zynor.zview.ui.theme.JetBlack
-import com.zynor.zview.ui.theme.NeonRose
-import com.zynor.zview.ui.theme.PureWhite
-import com.zynor.zview.ui.theme.SecondaryText
 import com.zynor.zview.ui.theme.SuccessGreen
 import com.zynor.zview.ui.viewmodel.ZViewViewModel
 
-const val ZVIEW_FEEDBACK_URL = "https://zynor-view.web.app/"
+const val ZSCAN_FEEDBACK_URL = "https://zynor-view.web.app/"
 
 @Composable
 fun SettingsScreen(viewModel: ZViewViewModel) {
     val context = LocalContext.current
     val preferences by viewModel.preferences.collectAsState()
+    val colors = MaterialTheme.colorScheme
     var feedbackError by remember { mutableStateOf<String?>(null) }
     var copiedBanner by remember { mutableStateOf(false) }
 
@@ -70,28 +65,62 @@ fun SettingsScreen(viewModel: ZViewViewModel) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(JetBlack)
+            .background(colors.background)
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
             Text(
-                text = "Settings",
+                text = "Z Scan: PDF Maker Settings",
                 style = MaterialTheme.typography.headlineMedium,
-                color = PureWhite
+                color = colors.onBackground
             )
             Text(
-                text = "ZView v1.0.0 · Offline-First Native Android Scanner",
+                text = "Z Scan: PDF Maker v1.1.0 · Offline-First Native Android Scanner",
                 style = MaterialTheme.typography.labelMedium,
-                color = SecondaryText
+                color = colors.onSurfaceVariant
             )
+        }
+
+        // Theme Selection: System Default, Light Mode, Dark Mode
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = colors.surface),
+                border = BorderStroke(1.dp, colors.outline),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(18.dp)) {
+                    Text(
+                        text = "Appearance & Theme Mode",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = colors.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Choose Light Mode, Dark Mode (Jet Black #0A0A0A), or follow your Android System Default theme.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        AppThemeMode.entries.forEach { mode ->
+                            FilterChip(
+                                selected = preferences.themeMode == mode,
+                                onClick = { viewModel.setThemeMode(mode) },
+                                label = { Text(mode.displayName) }
+                            )
+                        }
+                    }
+                }
+            }
         }
 
         // Personal Review & Feedback Section (https://zynor-view.web.app/)
         item {
             Card(
-                colors = CardDefaults.cardColors(containerColor = DarkSurface),
-                border = BorderStroke(1.dp, NeonRose.copy(alpha = 0.7f)),
+                colors = CardDefaults.cardColors(containerColor = colors.surface),
+                border = BorderStroke(1.dp, colors.secondary.copy(alpha = 0.7f)),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -99,41 +128,41 @@ fun SettingsScreen(viewModel: ZViewViewModel) {
                     Text(
                         text = "Personal Review & Feedback",
                         style = MaterialTheme.typography.titleLarge,
-                        color = PureWhite
+                        color = colors.onSurface
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "Share your review or feedback on the official ZView portal ($ZVIEW_FEEDBACK_URL). Opens in a secure HTTPS Custom Tab without requiring account login.",
+                        text = "Share your review or feedback on the official Z Scan: PDF Maker portal ($ZSCAN_FEEDBACK_URL). Opens in a secure HTTPS Custom Tab without requiring account login.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = SecondaryText
+                        color = colors.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(14.dp))
                     Button(
                         onClick = {
                             feedbackError = null
-                            val opened = openFeedbackWebsite(context, ZVIEW_FEEDBACK_URL)
+                            val opened = openFeedbackWebsite(context, ZSCAN_FEEDBACK_URL)
                             if (!opened) {
-                                feedbackError = "Could not launch a browser for $ZVIEW_FEEDBACK_URL. You can retry or copy the URL below."
+                                feedbackError = "Could not launch a browser for $ZSCAN_FEEDBACK_URL. You can retry or copy the URL below."
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = CeruleanBlue),
+                        colors = ButtonDefaults.buttonColors(containerColor = colors.primary),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Personal Review & Feedback", color = PureWhite)
+                        Text("Personal Review & Feedback", color = colors.onPrimary)
                     }
 
                     feedbackError?.let { err ->
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = err, color = ErrorRed, style = MaterialTheme.typography.bodyMedium)
+                        Text(text = err, color = colors.error, style = MaterialTheme.typography.bodyMedium)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedButton(
                                 onClick = {
                                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                    clipboard.setPrimaryClip(ClipData.newPlainText("ZView Feedback URL", ZVIEW_FEEDBACK_URL))
+                                    clipboard.setPrimaryClip(ClipData.newPlainText("Z Scan Feedback URL", ZSCAN_FEEDBACK_URL))
                                     copiedBanner = true
                                 }
                             ) {
-                                Text("Copy URL", color = PureWhite)
+                                Text("Copy URL", color = colors.onSurface)
                             }
                         }
                     }
@@ -153,13 +182,13 @@ fun SettingsScreen(viewModel: ZViewViewModel) {
         // Default PDF Page Size
         item {
             Card(
-                colors = CardDefaults.cardColors(containerColor = DarkSurface),
-                border = BorderStroke(1.dp, DividerColor),
+                colors = CardDefaults.cardColors(containerColor = colors.surface),
+                border = BorderStroke(1.dp, colors.outline),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
-                    Text("Default PDF Page Size", style = MaterialTheme.typography.titleMedium, color = PureWhite)
+                    Text("Default PDF Page Size", style = MaterialTheme.typography.titleMedium, color = colors.onSurface)
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         PdfPageSize.entries.forEach { size ->
@@ -177,13 +206,13 @@ fun SettingsScreen(viewModel: ZViewViewModel) {
         // Default Enhancement Preference
         item {
             Card(
-                colors = CardDefaults.cardColors(containerColor = DarkSurface),
-                border = BorderStroke(1.dp, DividerColor),
+                colors = CardDefaults.cardColors(containerColor = colors.surface),
+                border = BorderStroke(1.dp, colors.outline),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
-                    Text("Default Image Enhancement", style = MaterialTheme.typography.titleMedium, color = PureWhite)
+                    Text("Default Image Enhancement", style = MaterialTheme.typography.titleMedium, color = colors.onSurface)
                     Spacer(modifier = Modifier.height(8.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         EnhancementMode.entries.forEach { mode ->
@@ -201,44 +230,44 @@ fun SettingsScreen(viewModel: ZViewViewModel) {
         // Storage & SAF Cloud Folder Sync
         item {
             Card(
-                colors = CardDefaults.cardColors(containerColor = DarkSurface),
-                border = BorderStroke(1.dp, DividerColor),
+                colors = CardDefaults.cardColors(containerColor = colors.surface),
+                border = BorderStroke(1.dp, colors.outline),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
-                    Text("Local Storage & SAF Cloud Folder Sync", style = MaterialTheme.typography.titleMedium, color = PureWhite)
+                    Text("Local Storage & SAF Cloud Folder Sync", style = MaterialTheme.typography.titleMedium, color = colors.onSurface)
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = preferences.safCloudBackupUri
                             ?.let { "Linked SAF Sync Folder: $it" }
                             ?: "All PDFs are stored locally in app-private storage by default. Optionally link a Google Drive, Nextcloud, or local SAF folder for automatic PDF backup.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = SecondaryText
+                        color = colors.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     OutlinedButton(onClick = { safFolderLauncher.launch(null) }) {
-                        Text("Select SAF Backup / Cloud Folder", color = CeruleanBlue)
+                        Text("Select SAF Backup / Cloud Folder", color = colors.primary)
                     }
                 }
             }
         }
 
-        // Privacy & About ZView
+        // Privacy & About Z Scan: PDF Maker
         item {
             Card(
-                colors = CardDefaults.cardColors(containerColor = DarkSurface),
-                border = BorderStroke(1.dp, DividerColor),
+                colors = CardDefaults.cardColors(containerColor = colors.surface),
+                border = BorderStroke(1.dp, colors.outline),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
-                    Text("Privacy & About ZView", style = MaterialTheme.typography.titleMedium, color = PureWhite)
+                    Text("Privacy & About Z Scan: PDF Maker", style = MaterialTheme.typography.titleMedium, color = colors.onSurface)
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "ZView is 100% free, ad-free, and offline-first. No user accounts, analytics SDKs, or remote servers ever touch your documents. Camera access is requested strictly when scanning.",
+                        text = "Z Scan: PDF Maker is 100% free, ad-free, and offline-first. No user accounts, analytics SDKs, or remote servers ever touch your documents. Camera access is requested strictly when scanning.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = SecondaryText
+                        color = colors.onSurfaceVariant
                     )
                 }
             }
