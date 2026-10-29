@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --zview-jet-black: #0A0A0A;
+    --zview-cerulean: #007BA7;
+    --zview-neon-rose: #FF2D95;
+    --zview-white: #FFFFFF;
+    --zview-text-secondary: #B8B8C2;
+    --zview-surface-dark: #17171C;
+    --zview-surface-elevated: #22222A;
+    --zview-divider: #34343D;
+    --zview-error: #FF5252;
+    --zview-success: #4CAF50;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #0A0A0A;
+    color: #FFFFFF;
+    letter-spacing: 0.01em;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+

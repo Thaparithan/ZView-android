@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ZView</string>
+    <string name="app_tagline">Document Scanner &amp; PDF Creator</string>
+    <string name="feedback_url">https://zynor-view.web.app/</string>
+    <string name="scan_document">Scan Document</string>
+    <string name="import_images">Import Images</string>
+    <string name="recent_documents">Recent Documents</string>
+    <string name="view_all_documents">View All Documents</string>
+    <string name="personal_review_feedback">Personal Review &amp; Feedback</string>
+    <string name="privacy_summary">ZView processes and stores all scanned pages, image enhancements, and generated PDFs locally on your device. No account registration, tracking SDKs, or remote uploads are used.</string>
+</resources>
